@@ -12,8 +12,8 @@ from tools import (
 )
 
 # ---------- 页面配置 ----------
-st.set_page_config(page_title="🍔 智能外卖助手", page_icon="🍜", layout="wide")
-st.title("🍜 智能外卖助手")
+st.set_page_config(page_title=" 智能外卖助手", page_icon="🍜", layout="wide")
+st.title(" 智能外卖助手")
 
 # ---------- 初始化 DeepSeek 客户端 ----------
 client = OpenAI(
