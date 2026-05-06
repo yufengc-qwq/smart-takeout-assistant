@@ -83,6 +83,7 @@ def confirm_choice(restaurant_name: str):
         profile["favorite_tags"][tag] = profile["favorite_tags"].get(tag, 0) + 2.0
     profile["history"].append({"action": "confirm", "restaurant": restaurant_name})
     save_profile(profile)
+    return f"✅ 已记住您喜欢 **{restaurant_name}**，下次会优先推荐类似口味！"
 
 TOOLS = [
     {
