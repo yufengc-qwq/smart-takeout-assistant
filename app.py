@@ -3,6 +3,41 @@ import os
 import json
 from openai import OpenAI
 
+def clean_messages_for_api(messages):
+    """
+    移除不完整的 tool_calls 序列，确保合规：
+    - 如果最后一条 assistant 消息包含 tool_calls 但没有后续 tool 响应，删除该 assistant 消息。
+    - 同时也删除孤立的 tool 消息（没有对应的 assistant tool_calls）。
+    """
+    cleaned = []
+    for i, msg in enumerate(messages):
+        if msg["role"] == "assistant" and msg.get("tool_calls"):
+            # 检查后面是否紧跟 tool 消息来响应这些 tool_calls
+            has_tool_responses = False
+            for j in range(i+1, len(messages)):
+                if messages[j]["role"] == "tool":
+                    has_tool_responses = True
+                    break
+                elif messages[j]["role"] != "tool":
+                    # 遇到了非 tool 消息，说明不存在 tool 响应，停止检查
+                    break
+            if not has_tool_responses:
+                continue  # 跳过这条 assistant 消息
+        elif msg["role"] == "tool":
+            # 检查前面是否有对应的 assistant tool_calls
+            has_assistant_tool_call = False
+            for j in range(i-1, -1, -1):
+                prev = messages[j]
+                if prev["role"] == "assistant" and prev.get("tool_calls"):
+                    has_assistant_tool_call = True
+                    break
+                elif prev["role"] != "tool":
+                    break
+            if not has_assistant_tool_call:
+                continue  # 孤立的 tool 消息，丢掉
+        cleaned.append(msg)
+    return cleaned
+
 # ---------- 导入工具模块 ----------
 from tools import (
     get_top_rated_restaurants,
@@ -99,7 +134,7 @@ if prompt:
     # 2. 调用 DeepSeek 进行工具调用循环
     with st.chat_message("assistant"):
         # 用于 API 调用的消息列表（不含界面工具消息）
-        api_messages = st.session_state.messages.copy()
+        api_messages = clean_messages_for_api(st.session_state.messages)
         # 循环控制
         max_turns = 5
         turn = 0
